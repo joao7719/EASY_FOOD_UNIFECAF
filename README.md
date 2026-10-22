@@ -8,6 +8,8 @@ O projeto EasyFood foi estruturado para separar responsabilidades em camadas:
 
 - `src/database` para a conexão com o Prisma
 - `src/modules/restaurants` para a lógica de restaurantes
+- `src/modules/dishes` para o cardápio e os pratos
+- `src/modules/shared` para upload e processamento compartilhados de imagens
 - `src/modules/auth` para autenticação e proteção de rotas
 - `src/app.js` para a configuração do Express
 - `server.js` para iniciar a aplicação
@@ -21,6 +23,7 @@ O projeto EasyFood foi estruturado para separar responsabilidades em camadas:
 - JWT
 - bcryptjs
 - dotenv
+- Multer e Sharp (upload e otimização de imagens)
 
 ## Pré-requisitos
 
@@ -75,7 +78,7 @@ http://localhost:3000
 Retorna a lista de restaurantes.
 
 #### POST /restaurants
-Cria um restaurante.
+Cria um restaurante. Requer `Authorization: Bearer SEU_TOKEN`.
 
 Body exemplo:
 
@@ -88,7 +91,28 @@ Body exemplo:
 ```
 
 #### DELETE /restaurants/:id
-Remove um restaurante pelo ID.
+Remove um restaurante pelo ID. Requer `Authorization: Bearer SEU_TOKEN`.
+
+### Pratos e cardápio
+
+#### GET /restaurants/:restaurantId/dishes
+Lista publicamente os pratos associados ao restaurante.
+
+#### POST /restaurants/:restaurantId/dishes
+Cria um prato para o restaurante informado. Requer `Authorization: Bearer SEU_TOKEN`.
+
+```json
+{
+  "name": "Pizza Margherita",
+  "description": "Molho de tomate, queijo e manjericão",
+  "price": 49.90
+}
+```
+
+#### POST /dishes/:dishId/image
+Envia a imagem do prato usando `multipart/form-data`, com o campo `image`. Requer JWT. São aceitos JPEG, PNG e WebP até 5 MB; a API redimensiona para no máximo 800 px de largura e salva como WebP em `uploads/dishes/`.
+
+As imagens ficam acessíveis pelo caminho retornado em `imageUrl`, por exemplo `/uploads/dishes/<arquivo>.webp`.
 
 ### Autenticação
 
@@ -131,6 +155,7 @@ Authorization: Bearer SEU_TOKEN
 ```text
 .
 ├── adrs/
+├── docs/adr/
 ├── prisma/
 ├── public/
 ├── src/
@@ -139,7 +164,10 @@ Authorization: Bearer SEU_TOKEN
 │   │   └── prisma.js
 │   ├── modules/
 │   │   ├── auth/
-│   │   └── restaurants/
+│   │   ├── dishes/
+│   │   ├── restaurants/
+│   │   └── shared/
+├── uploads/dishes/
 ├── .env
 ├── package.json
 ├── server.js
@@ -149,5 +177,5 @@ Authorization: Bearer SEU_TOKEN
 ## Observações
 
 - A rota de restaurantes está pública na listagem.
-- O cadastro e a exclusão de restaurantes podem ser protegidos por autenticação conforme a evolução do projeto.
+- O cadastro e a exclusão de restaurantes, assim como a criação de pratos e o upload de imagens, exigem autenticação JWT.
 - O segredo do JWT deve ser mantido em ambiente seguro.

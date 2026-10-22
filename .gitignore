@@ -3,3 +3,7 @@ node_modules
 .env
 
 /generated/prisma
+
+# Keep the upload directory in Git, but never commit user-provided images.
+/uploads/dishes/*
+!/uploads/dishes/.gitkeep

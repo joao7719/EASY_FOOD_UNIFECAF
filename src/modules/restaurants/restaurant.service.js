@@ -1,4 +1,5 @@
 const prisma = require("../../database/prisma");
+const imageService = require("../shared/image.service");
 
 async function listRestaurants() {
   return prisma.restaurant.findMany();
@@ -15,9 +16,19 @@ async function createRestaurant(data) {
 }
 
 async function deleteRestaurant(id) {
-  return prisma.restaurant.delete({
-    where: { id: parseInt(id) }
+  const restaurantId = parseInt(id, 10);
+  const dishes = await prisma.dish.findMany({
+    where: { restaurantId },
+    select: { imageUrl: true }
   });
+  const restaurant = await prisma.restaurant.delete({
+    where: { id: restaurantId }
+  });
+
+  await Promise.all(dishes.map(({ imageUrl }) => {
+    return imageUrl ? imageService.removeOptimizedImage(imageUrl).catch(() => {}) : Promise.resolve();
+  }));
+  return restaurant;
 }
 
 module.exports = {

@@ -1,7 +1,7 @@
 const authService = require("./auth.service");
 
 async function register(req, res) {
-  const { name, email, password } = req.body;
+  const { name, email, password } = req.body || {};
 
   if (!name || !email || !password) {
     return res.status(400).json({ error: "Nome, email e senha são obrigatórios" });
@@ -21,7 +21,7 @@ async function register(req, res) {
 }
 
 async function login(req, res) {
-  const { email, password } = req.body;
+  const { email, password } = req.body || {};
 
   if (!email || !password) {
     return res.status(400).json({ error: "Email e senha são obrigatórios" });
