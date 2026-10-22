@@ -1,6 +1,20 @@
-# EasyFood
+# EasyFood — Atividade 7: Cardápio e processamento de imagens
 
-API para cadastro e listagem de restaurantes com arquitetura em camadas e autenticação JWT.
+API EasyFood com cardápio de restaurantes, upload e otimização de imagens, arquitetura em camadas e autenticação JWT.
+
+## Atividade 7 — Onde o professor deve olhar
+
+Esta entrega implementa o cadastro de pratos e o processamento local de imagens descritos na Atividade 7.
+
+- **Rotas, Controller e Service dos pratos:** [`src/modules/dishes/`](src/modules/dishes/)
+- **Upload Multer e otimização Sharp:** [`src/modules/shared/`](src/modules/shared/)
+- **Modelo e relacionamento Prisma:** [`prisma/schema.prisma`](prisma/schema.prisma)
+- **Migração da tabela `Dish`:** [`prisma/migrations/20261022163300_add_dishes/migration.sql`](prisma/migrations/20261022163300_add_dishes/migration.sql)
+- **Decisão arquitetural (ADR-005):** [`docs/adr/ADR-005-processamento-de-imagens.md`](docs/adr/ADR-005-processamento-de-imagens.md)
+- **Comparação de imagens e respostas da atividade:** [`docs/atividade-7-comparacao-de-imagens.md`](docs/atividade-7-comparacao-de-imagens.md)
+- **Testes automatizados:** execute `npm test`.
+
+Endpoints centrais: `GET/POST /restaurants/:restaurantId/dishes` e `POST /dishes/:dishId/image`.
 
 ## Visão geral
 
