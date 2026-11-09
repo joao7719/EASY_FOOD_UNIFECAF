@@ -97,6 +97,8 @@
             <input type="text" id="name" placeholder="Nome do restaurante" required />
             <input type="text" id="category" placeholder="Categoria" required />
             <input type="number" id="rating" min="0" max="5" step="0.5" value="4.5" required />
+            <label for="restaurant-image">Foto (JPEG, PNG ou WebP; até 5 MB)</label>
+            <input type="file" id="restaurant-image" accept="image/jpeg,image/png,image/webp" />
             <button type="submit">Cadastrar restaurante</button>
           </form>
           <div id="restaurant-message" class="message"></div>
@@ -116,6 +118,12 @@
       const restaurantMessage = document.getElementById('restaurant-message');
       const restaurantList = document.getElementById('restaurant-list');
       const loadButton = document.getElementById('load-button');
+      const imageInput = document.getElementById('restaurant-image');
+
+      function tokenHeaders() {
+        const token = localStorage.getItem('easyfood_token');
+        return token ? { Authorization: `Bearer ${token}` } : {};
+      }
 
       function setMessage(element, type, text) {
         element.className = `message ${type}`;
@@ -138,6 +146,7 @@
 
           restaurantList.innerHTML = data.map((restaurant) => `
             <div class="restaurant-item">
+              ${restaurant.imageUrl ? `<img src="${API_URL}${restaurant.imageUrl}" alt="Foto de ${restaurant.name}" width="96" />` : ''}
               <strong>${restaurant.name}</strong>
               <span>Categoria: ${restaurant.category}</span><br />
               <span>Avaliação: ${restaurant.rating}</span>
@@ -151,17 +160,23 @@
       restaurantForm.addEventListener('submit', async (event) => {
         event.preventDefault();
 
-        const payload = {
-          name: document.getElementById('name').value,
-          category: document.getElementById('category').value,
-          rating: Number(document.getElementById('rating').value)
-        };
+        const token = localStorage.getItem('easyfood_token');
+        if (!token) {
+          setMessage(restaurantMessage, 'error', 'Faça login na página de usuários antes de cadastrar um restaurante.');
+          return;
+        }
+
+        const payload = new FormData();
+        payload.append('name', document.getElementById('name').value);
+        payload.append('category', document.getElementById('category').value);
+        payload.append('rating', document.getElementById('rating').value);
+        if (imageInput.files[0]) payload.append('image', imageInput.files[0]);
 
         try {
           const response = await fetch(`${API_URL}/restaurants`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            headers: tokenHeaders(),
+            body: payload
           });
 
           const data = await response.json();

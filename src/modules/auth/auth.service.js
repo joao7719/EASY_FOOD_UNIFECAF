@@ -1,6 +1,21 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const prisma = require("../../database/prisma");
+const imageService = require("../shared/image.service");
+
+function httpError(message, statusCode) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
+function parseUserId(value) {
+  const id = Number(value);
+  if (!Number.isSafeInteger(id) || id < 1) {
+    throw httpError("ID do usuário inválido", 400);
+  }
+  return id;
+}
 
 function getJwtSecret() {
   if (!process.env.JWT_SECRET) {
@@ -22,7 +37,8 @@ async function register({ name, email, password }) {
     select: {
       id: true,
       name: true,
-      email: true
+      email: true,
+      imageUrl: true
     }
   });
 }
@@ -47,9 +63,45 @@ async function login({ email, password }) {
     user: {
       id: user.id,
       name: user.name,
-      email: user.email
+      email: user.email,
+      imageUrl: user.imageUrl
     }
   };
 }
 
-module.exports = { register, login };
+async function getUserById(userId) {
+  const id = parseUserId(userId);
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, name: true, email: true, imageUrl: true }
+  });
+  if (!user) throw httpError("Usuário não encontrado", 404);
+  return user;
+}
+
+async function uploadProfileImage(userId, buffer) {
+  const id = parseUserId(userId);
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, imageUrl: true }
+  });
+  if (!user) throw httpError("Usuário não encontrado", 404);
+
+  const imageUrl = await imageService.optimizeImage(buffer, "profiles");
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: { imageUrl },
+      select: { id: true, name: true, email: true, imageUrl: true }
+    });
+    if (user.imageUrl) {
+      await imageService.removeOptimizedImage(user.imageUrl).catch(() => {});
+    }
+    return updatedUser;
+  } catch (error) {
+    await imageService.removeOptimizedImage(imageUrl).catch(() => {});
+    throw error;
+  }
+}
+
+module.exports = { register, login, getUserById, uploadProfileImage };

@@ -111,10 +111,16 @@
         </section>
       </div>
 
-      <section class="card" style="margin-top: 24px;">
-        <h2>Ver usuário atual</h2>
-        <button id="me-button" class="secondary" type="button">Buscar usuário autenticado</button>
-        <div id="me-message" class="user-box" style="display:none;"></div>
+        <section class="card" style="margin-top: 24px;">
+          <h2>Ver usuário atual</h2>
+          <button id="me-button" class="secondary" type="button">Buscar usuário autenticado</button>
+          <img id="profile-image-preview" alt="Foto do perfil" width="120" style="display:none; margin-top:16px; border-radius:50%;" />
+          <form id="profile-image-form" style="margin-top:16px;">
+            <label for="profile-image-file">Foto de perfil (JPEG, PNG ou WebP; até 5 MB)</label>
+            <input id="profile-image-file" type="file" accept="image/jpeg,image/png,image/webp" required />
+            <button type="submit" class="secondary">Enviar foto de perfil</button>
+          </form>
+          <div id="me-message" class="user-box" style="display:none;"></div>
       </section>
     </div>
 
@@ -127,6 +133,9 @@
       const loginMessage = document.getElementById('login-message');
       const meButton = document.getElementById('me-button');
       const meMessage = document.getElementById('me-message');
+      const profileImageForm = document.getElementById('profile-image-form');
+      const profileImageFile = document.getElementById('profile-image-file');
+      const profileImagePreview = document.getElementById('profile-image-preview');
 
       function setMessage(element, type, text) {
         element.className = `message ${type}`;
@@ -222,9 +231,39 @@
             <p><strong>Email:</strong> ${data.user.email}</p>
             <p><strong>Mensagem:</strong> ${data.message}</p>
           `;
+          if (data.user.imageUrl) {
+            profileImagePreview.src = `${API_URL}${data.user.imageUrl}`;
+            profileImagePreview.style.display = 'block';
+          }
         } catch (error) {
           meMessage.style.display = 'block';
           meMessage.innerHTML = `<p>${error.message}</p>`;
+        }
+      });
+
+      profileImageForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const token = localStorage.getItem('easyfood_token');
+        if (!token) {
+          setMessage(loginMessage, 'error', 'Faça login antes de enviar uma foto.');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('image', profileImageFile.files[0]);
+        try {
+          const response = await fetch(`${API_URL}/auth/me/image`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || 'Erro ao enviar foto');
+          profileImagePreview.src = `${API_URL}${data.user.imageUrl}`;
+          profileImagePreview.style.display = 'block';
+          setMessage(loginMessage, 'success', 'Foto do perfil atualizada.');
+        } catch (error) {
+          setMessage(loginMessage, 'error', error.message);
         }
       });
     </script>

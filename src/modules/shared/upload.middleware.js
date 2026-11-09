@@ -15,9 +15,14 @@ const upload = multer({
   }
 });
 
-function uploadDishImage(req, res, next) {
+function handleUpload(req, res, next, { required = true } = {}) {
   upload.single("image")(req, res, (error) => {
-    if (!error) return next();
+    if (!error) {
+      if (required && !req.file) {
+        return res.status(400).json({ error: "Nenhuma imagem enviada" });
+      }
+      return next();
+    }
 
     if (error instanceof multer.MulterError) {
       return res.status(error.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({
@@ -33,4 +38,16 @@ function uploadDishImage(req, res, next) {
   });
 }
 
-module.exports = { uploadDishImage };
+function uploadImage(req, res, next) {
+  return handleUpload(req, res, next);
+}
+
+function uploadOptionalImage(req, res, next) {
+  return handleUpload(req, res, next, { required: false });
+}
+
+module.exports = {
+  uploadImage,
+  uploadDishImage: uploadImage,
+  uploadOptionalImage
+};

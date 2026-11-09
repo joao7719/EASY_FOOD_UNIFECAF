@@ -5,6 +5,7 @@ const restaurantForm = document.getElementById("restaurant-form");
 const nameInput = document.getElementById("name");
 const categoryInput = document.getElementById("category");
 const ratingInput = document.getElementById("rating");
+const restaurantImageInput = document.getElementById("restaurant-image");
 const authForm = document.getElementById("auth-form");
 const authNameInput = document.getElementById("auth-name");
 const authEmailInput = document.getElementById("auth-email");
@@ -17,6 +18,12 @@ const refreshButton = document.getElementById("refresh-button");
 const restaurantCount = document.getElementById("restaurant-count");
 const usersPanel = document.getElementById("users-panel");
 const restaurantsPanel = document.getElementById("restaurants-panel");
+const profilePanel = document.getElementById("profile-panel");
+const profileForm = document.getElementById("profile-image-form");
+const profileImageInput = document.getElementById("profile-image-file");
+const profileImage = document.getElementById("profile-image");
+const profilePlaceholder = document.getElementById("profile-placeholder");
+const logoutButton = document.getElementById("logout-button");
 const tabButtons = document.querySelectorAll(".tab-button");
 
 function showMessage(type, text) {
@@ -43,15 +50,22 @@ function setActiveTab(tab) {
   restaurantsPanel.classList.toggle("hidden-panel", shouldShowUsers);
 }
 
-function getAuthHeaders() {
-  const headers = { "Content-Type": "application/json" };
+function getTokenHeaders() {
+  const headers = {};
   const token = localStorage.getItem("easyfood_token");
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
+  if (token) headers.Authorization = `Bearer ${token}`;
   return headers;
+}
+
+function getAuthHeaders() {
+  return { "Content-Type": "application/json", ...getTokenHeaders() };
+}
+
+function publicImageUrl(imageUrl, ownerType) {
+  const prefix = `/uploads/${ownerType}/`;
+  return typeof imageUrl === "string" && imageUrl.startsWith(prefix)
+    ? `${API_URL}${imageUrl}`
+    : "";
 }
 
 function renderRestaurants(restaurants) {
@@ -73,10 +87,14 @@ function renderRestaurants(restaurants) {
     const id = restaurant.id;
     const rating = Number(restaurant.rating || 0);
     const stars = rating >= 4 ? "★★★★☆" : rating >= 3 ? "★★★☆☆" : "★★☆☆☆";
+    const photoUrl = publicImageUrl(restaurant.imageUrl, "restaurants");
+    const avatar = photoUrl
+      ? `<img class="restaurant-photo" src="${escapeHtml(photoUrl)}" alt="Foto de ${escapeHtml(restaurant.name)}" />`
+      : "🍽️";
 
     card.innerHTML = `
       <div class="restaurant-card-main">
-        <div class="restaurant-avatar">🍽️</div>
+        <div class="restaurant-avatar">${avatar}</div>
         <div class="restaurant-data">
           <h3 class="restaurant-title">${escapeHtml(restaurant.name)}</h3>
           <p class="restaurant-category">${escapeHtml(restaurant.category)}</p>
@@ -117,6 +135,35 @@ async function fetchRestaurants() {
   }
 }
 
+async function loadProfile() {
+  const token = localStorage.getItem("easyfood_token");
+  if (!token) {
+    profilePanel.classList.add("hidden-panel");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/auth/me`, {
+      headers: getTokenHeaders()
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      localStorage.removeItem("easyfood_token");
+      profilePanel.classList.add("hidden-panel");
+      return;
+    }
+
+    profilePanel.classList.remove("hidden-panel");
+    const photoUrl = publicImageUrl(data.user?.imageUrl, "profiles");
+    profileImage.classList.toggle("hidden-panel", !photoUrl);
+    profilePlaceholder.classList.toggle("hidden-panel", Boolean(photoUrl));
+    if (photoUrl) profileImage.src = photoUrl;
+    else profileImage.removeAttribute("src");
+  } catch {
+    profilePanel.classList.add("hidden-panel");
+  }
+}
+
 async function handleAuth(action) {
   const name = authNameInput.value.trim();
   const email = authEmailInput.value.trim();
@@ -138,23 +185,21 @@ async function handleAuth(action) {
   try {
     const response = await fetch(`${API_URL}/auth/${action}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(action === "register" ? { name, email, password } : { email, password })
     });
 
     const data = await response.json();
-
     if (!response.ok) {
       throw new Error(data.error || `Erro ao ${action === "register" ? "cadastrar" : "logar"}`);
     }
 
     if (data.token) {
       localStorage.setItem("easyfood_token", data.token);
+      await loadProfile();
       showMessage("success", "Login realizado com sucesso");
     } else {
-      showMessage("success", action === "register" ? "Usuário cadastrado com sucesso" : "Operação concluída");
+      showMessage("success", action === "register" ? "Usuário cadastrado com sucesso. Faça login para enviar sua foto." : "Operação concluída");
     }
 
     authForm.reset();
@@ -180,6 +225,41 @@ loginButton.addEventListener("click", (event) => {
   handleAuth("login");
 });
 
+profileForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const image = profileImageInput.files[0];
+  if (!image) {
+    showMessage("error", "Selecione uma imagem para o perfil");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("image", image);
+  showLoading(true);
+  try {
+    const response = await fetch(`${API_URL}/auth/me/image`, {
+      method: "POST",
+      headers: getTokenHeaders(),
+      body: formData
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Erro ao enviar foto do perfil");
+    profileImageInput.value = "";
+    await loadProfile();
+    showMessage("success", "Foto do perfil atualizada");
+  } catch (error) {
+    showMessage("error", error.message);
+  } finally {
+    showLoading(false);
+  }
+});
+
+logoutButton.addEventListener("click", () => {
+  localStorage.removeItem("easyfood_token");
+  profilePanel.classList.add("hidden-panel");
+  showMessage("success", "Sessão encerrada");
+});
+
 restaurantForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -197,14 +277,20 @@ restaurantForm.addEventListener("submit", async (event) => {
     return;
   }
 
+  const formData = new FormData();
+  formData.append("name", name);
+  formData.append("category", category);
+  formData.append("rating", String(rating));
+  if (restaurantImageInput.files[0]) formData.append("image", restaurantImageInput.files[0]);
+
   showLoading(true);
   clearMessage();
 
   try {
     const response = await fetch(`${API_URL}/restaurants`, {
       method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ name, category, rating })
+      headers: getTokenHeaders(),
+      body: formData
     });
 
     if (!response.ok) {
@@ -225,26 +311,17 @@ restaurantForm.addEventListener("submit", async (event) => {
 
 restaurantList.addEventListener("click", async (event) => {
   const deleteButton = event.target.closest(".delete-button");
-
-  if (!deleteButton) {
-    return;
-  }
+  if (!deleteButton) return;
 
   const id = deleteButton.dataset.id;
-
   showLoading(true);
   clearMessage();
-
   try {
     const response = await fetch(`${API_URL}/restaurants/${id}`, {
       method: "DELETE",
       headers: getAuthHeaders()
     });
-
-    if (!response.ok) {
-      throw new Error("Erro ao deletar restaurante");
-    }
-
+    if (!response.ok) throw new Error("Erro ao deletar restaurante");
     showMessage("success", "Restaurante removido com sucesso");
     await fetchRestaurants();
   } catch (error) {
@@ -255,15 +332,14 @@ restaurantList.addEventListener("click", async (event) => {
 });
 
 tabButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    setActiveTab(button.dataset.tab);
-  });
+  button.addEventListener("click", () => setActiveTab(button.dataset.tab));
 });
 
 refreshButton.addEventListener("click", fetchRestaurants);
 
 setActiveTab("users");
 fetchRestaurants();
+loadProfile();
 
 function escapeHtml(value) {
   return String(value)

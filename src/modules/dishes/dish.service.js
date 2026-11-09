@@ -48,7 +48,10 @@ async function createDish(restaurantId, data) {
   }
 
   return prisma.dish.create({
-    data: { ...dishData, restaurantId: id }
+    data: {
+      ...dishData,
+      restaurant: { connect: { id } }
+    }
   });
 }
 

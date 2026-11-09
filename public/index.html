@@ -78,6 +78,21 @@
             </div>
           </form>
 
+          <section class="profile-upload-panel hidden-panel" id="profile-panel" aria-label="Foto do perfil">
+            <div class="profile-preview-wrap">
+              <img id="profile-image" class="profile-image hidden-panel" alt="Foto do perfil" />
+              <span id="profile-placeholder" class="profile-placeholder">👤</span>
+            </div>
+            <form id="profile-image-form" class="restaurant-form">
+              <div class="input-group">
+                <label for="profile-image-file">Foto do perfil (JPEG, PNG ou WebP; até 5 MB)</label>
+                <input type="file" id="profile-image-file" accept="image/jpeg,image/png,image/webp" required />
+              </div>
+              <button type="submit" class="submit-button">Atualizar foto do perfil</button>
+              <button type="button" class="submit-button secondary-button" id="logout-button">Sair</button>
+            </form>
+          </section>
+
           <div id="message" class="message" role="status" aria-live="polite"></div>
         </section>
 
@@ -101,6 +116,11 @@
             <div class="input-group">
               <label for="rating">Avaliação</label>
               <input type="number" id="rating" name="rating" min="0" max="5" step="0.5" placeholder="4.5" required />
+            </div>
+
+            <div class="input-group">
+              <label for="restaurant-image">Foto do restaurante (opcional)</label>
+              <input type="file" id="restaurant-image" name="image" accept="image/jpeg,image/png,image/webp" />
             </div>
 
             <button type="submit" class="submit-button">

@@ -12,14 +12,16 @@ model Restaurant {
   name     String     @db.VarChar(150)
   category String?    @db.VarChar(100)
   rating   Decimal?   @db.Decimal(2, 1)
+  imageUrl String?    @db.VarChar(500)
   dishes   Dish[]
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  name     String @db.VarChar(150)
-  email    String @unique @db.VarChar(150)
-  password String @db.VarChar(255)
+  id       Int     @id @default(autoincrement())
+  name     String  @db.VarChar(150)
+  email    String  @unique @db.VarChar(150)
+  password String  @db.VarChar(255)
+  imageUrl String? @db.VarChar(500)
 }
 
 model Dish {

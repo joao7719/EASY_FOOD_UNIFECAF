@@ -38,11 +38,30 @@ async function login(req, res) {
   }
 }
 
-function me(req, res) {
-  return res.json({
-    message: "Você está autenticado!",
-    user: req.user
-  });
+async function me(req, res) {
+  try {
+    const user = await authService.getUserById(req.user.id);
+    return res.json({ message: "Você está autenticado!", user });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      error: error.statusCode ? error.message : "Erro interno do servidor"
+    });
+  }
 }
 
-module.exports = { register, login, me };
+async function uploadImage(req, res) {
+  if (!req.file) {
+    return res.status(400).json({ error: "Nenhuma imagem enviada" });
+  }
+
+  try {
+    const user = await authService.uploadProfileImage(req.user.id, req.file.buffer);
+    return res.json({ user });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      error: error.statusCode ? error.message : "Erro ao processar imagem"
+    });
+  }
+}
+
+module.exports = { register, login, me, uploadImage };

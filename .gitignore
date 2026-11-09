@@ -6,3 +6,7 @@ coverage/
 /generated/
 /uploads/dishes/*
 !/uploads/dishes/.gitkeep
+/uploads/profiles/*
+!/uploads/profiles/.gitkeep
+/uploads/restaurants/*
+!/uploads/restaurants/.gitkeep

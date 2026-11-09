@@ -28,10 +28,7 @@ async function notifyRestaurantCreated(restaurant) {
 
   for (const notification of notifications) {
     try {
-      await emailService.sendEmail({
-        to: recipient,
-        ...notification
-      });
+      await emailService.sendEmail({ to: recipient, ...notification });
     } catch (error) {
       console.error("Erro ao enviar e-mail:", error.message);
     }
@@ -42,37 +39,55 @@ async function listRestaurants() {
   return prisma.restaurant.findMany({ orderBy: { id: "asc" } });
 }
 
-async function createRestaurant(data) {
-  const restaurant = await prisma.restaurant.create({
-    data: {
-      name: data.name.trim(),
-      category: data.category.trim(),
-      rating: data.rating ?? 0
-    }
-  });
+async function createRestaurant(data, imageBuffer) {
+  let imageUrl;
+  if (imageBuffer) {
+    imageUrl = await imageService.optimizeImage(imageBuffer, "restaurants");
+  }
 
-  // O e-mail é uma ação secundária: não deve desfazer o cadastro persistido.
-  await notifyRestaurantCreated(restaurant);
-  return restaurant;
+  try {
+    const restaurant = await prisma.restaurant.create({
+      data: {
+        name: data.name.trim(),
+        category: data.category.trim(),
+        rating: data.rating ?? 0,
+        ...(imageUrl ? { imageUrl } : {})
+      }
+    });
+
+    // O e-mail é uma ação secundária: não deve desfazer o cadastro persistido.
+    await notifyRestaurantCreated(restaurant);
+    return restaurant;
+  } catch (error) {
+    if (imageUrl) await imageService.removeOptimizedImage(imageUrl).catch(() => {});
+    throw error;
+  }
 }
 
 async function deleteRestaurant(id) {
   const restaurantId = Number(id);
-  const dishes = await prisma.dish.findMany({
-    where: { restaurantId },
-    select: { imageUrl: true }
-  });
+  const [dishes, existingRestaurant] = await Promise.all([
+    prisma.dish.findMany({
+      where: { restaurantId },
+      select: { imageUrl: true }
+    }),
+    prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { imageUrl: true }
+    })
+  ]);
   const restaurant = await prisma.restaurant.delete({
     where: { id: restaurantId }
   });
 
-  await Promise.all(
-    dishes.map(({ imageUrl }) =>
-      imageUrl
-        ? imageService.removeOptimizedImage(imageUrl).catch(() => {})
-        : Promise.resolve()
-    )
-  );
+  await Promise.all([
+    ...dishes.map(({ imageUrl }) => imageUrl
+      ? imageService.removeOptimizedImage(imageUrl).catch(() => {})
+      : Promise.resolve()),
+    existingRestaurant?.imageUrl
+      ? imageService.removeOptimizedImage(existingRestaurant.imageUrl).catch(() => {})
+      : Promise.resolve()
+  ]);
 
   return restaurant;
 }

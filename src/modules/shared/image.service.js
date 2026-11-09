@@ -3,13 +3,43 @@ const path = require("path");
 const fs = require("fs/promises");
 const crypto = require("crypto");
 
-const uploadsDirectory = path.resolve(process.cwd(), "uploads", "dishes");
+const uploadDirectories = {
+  profiles: path.resolve(process.cwd(), "uploads", "profiles"),
+  dishes: path.resolve(process.cwd(), "uploads", "dishes"),
+  restaurants: path.resolve(process.cwd(), "uploads", "restaurants")
+};
+const supportedFormats = new Set(["jpeg", "png", "webp"]);
 
-async function optimizeImage(buffer) {
+function httpError(message, statusCode) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
+async function optimizeImage(buffer, ownerType = "dishes") {
   if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
-    const error = new Error("Arquivo de imagem inválido ou vazio");
-    error.statusCode = 400;
+    throw httpError("Arquivo de imagem inválido ou vazio", 400);
+  }
+
+  const uploadsDirectory = uploadDirectories[ownerType];
+  if (!uploadsDirectory) {
+    throw httpError("Tipo de imagem não permitido", 400);
+  }
+
+  let metadata;
+  try {
+    metadata = await sharp(buffer, {
+      failOn: "error",
+      limitInputPixels: 40_000_000
+    }).metadata();
+  } catch (cause) {
+    const error = httpError("Arquivo de imagem inválido ou corrompido", 400);
+    error.cause = cause;
     throw error;
+  }
+
+  if (!supportedFormats.has(metadata.format)) {
+    throw httpError("Formato de imagem não permitido; use JPEG, PNG ou WebP", 400);
   }
 
   const filename = `${crypto.randomUUID()}.webp`;
@@ -26,24 +56,25 @@ async function optimizeImage(buffer) {
       .webp({ quality: 80 })
       .toFile(filePath);
   } catch (cause) {
-    const error = new Error("Arquivo de imagem inválido ou corrompido");
-    error.statusCode = 400;
+    await fs.unlink(filePath).catch(() => {});
+    const error = httpError("Arquivo de imagem inválido ou corrompido", 400);
     error.cause = cause;
     throw error;
   }
 
-  return `/uploads/dishes/${filename}`;
+  return `/uploads/${ownerType}/${filename}`;
 }
 
 async function removeOptimizedImage(imageUrl) {
-  const prefix = "/uploads/dishes/";
-  if (typeof imageUrl !== "string" || !imageUrl.startsWith(prefix)) return;
+  if (typeof imageUrl !== "string") return;
 
-  const filename = imageUrl.slice(prefix.length);
-  if (!/^[a-f0-9-]+\.webp$/i.test(filename)) return;
+  const match = /^\/uploads\/(profiles|dishes|restaurants)\/([a-f0-9-]+\.webp)$/i.exec(imageUrl);
+  if (!match) return;
 
-  const filePath = path.resolve(uploadsDirectory, filename);
-  if (path.dirname(filePath) !== uploadsDirectory) return;
+  const [, ownerType, filename] = match;
+  const directory = uploadDirectories[ownerType];
+  const filePath = path.resolve(directory, filename);
+  if (path.dirname(filePath) !== directory) return;
 
   await fs.unlink(filePath).catch((error) => {
     if (error.code !== "ENOENT") throw error;

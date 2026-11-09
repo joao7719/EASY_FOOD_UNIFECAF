@@ -1,6 +1,6 @@
 # EasyFood
 
-API acadêmica para restaurantes, autenticação, cardápio e processamento de imagens. O projeto implementa as atividades 1 a 7 com Express, Prisma, PostgreSQL, JWT, bcryptjs, Multer e Sharp.
+API acadêmica para restaurantes, autenticação, cardápio e processamento de imagens. O projeto implementa as atividades 1 a 8 com Express, Prisma, PostgreSQL, JWT, bcryptjs, Multer e Sharp.
 
 ## Requisitos
 
@@ -32,33 +32,28 @@ Nunca envie `.env`, credenciais ou imagens enviadas por utilizadores para o repo
 
 ### Restaurantes
 
-- `GET /restaurants` — lista pública.
-- `POST /restaurants` — cria com JWT.
+- `GET /restaurants` — lista pública, incluindo `imageUrl` quando houver foto.
+- `POST /restaurants` — cria com JWT; aceita JSON ou `multipart/form-data`.
 - `DELETE /restaurants/:id` — remove com JWT.
 
-Body de criação:
+Campos multipart/JSON do cadastro: `name`, `category`, `rating` (opcional) e `image` (opcional, arquivo JPEG/PNG/WebP até 5 MB).
 
-```json
-{
-  "name": "Cantina Roma",
-  "category": "Italiana",
-  "rating": 4.5
-}
-```
-
-### Autenticação
+### Autenticação e perfil
 
 - `POST /auth/register` — cria utilizador e armazena a senha com bcrypt.
 - `POST /auth/login` — devolve JWT.
-- `GET /auth/me` — exige `Authorization: Bearer <token>`.
+- `GET /auth/me` — exige `Authorization: Bearer <token>` e retorna o perfil atualizado.
+- `POST /auth/me/image` — exige JWT e recebe `multipart/form-data` no campo `image`.
+
+A imagem de perfil é vinculada exclusivamente ao usuário identificado pelo token; qualquer ID enviado no formulário é ignorado.
 
 ### Cardápio
 
-- `GET /restaurants/:restaurantId/dishes` — lista pratos publicamente.
-- `POST /restaurants/:restaurantId/dishes` — cria prato com JWT.
+- `GET /restaurants/:restaurantId/dishes` — lista pratos públicos, incluindo `imageUrl`.
+- `POST /restaurants/:restaurantId/dishes` — cria prato com JWT; campos JSON: `name`, `description` e `price`.
 - `POST /dishes/:dishId/image` — recebe `multipart/form-data` no campo `image`, com JWT.
 
-As imagens aceites são JPEG, PNG e WebP até 5 MB. O Sharp salva a versão otimizada em `uploads/dishes/` como WebP com largura máxima de 800 px. O caminho devolvido em `imageUrl` é público em `/uploads/dishes/...`.
+Os três uploads aceitam JPEG, PNG e WebP até 5 MB. Sharp corrige a orientação, limita a largura a 800 px e converte para WebP com qualidade 80. Os arquivos processados são armazenados em `uploads/profiles/`, `uploads/dishes/` ou `uploads/restaurants/`, e servidos publicamente sob `/uploads/...`.
 
 ## Arquitetura
 
@@ -67,6 +62,7 @@ HTTP -> routes -> controller -> service -> database/prisma -> PostgreSQL
                                       |
                                       +-> shared/email.service
                                       +-> shared/image.service
+                                      +-> shared/upload.middleware
 ```
 
 `server.js` apenas carrega o ambiente e inicia o servidor. `src/app.js` compõe middlewares e módulos. Os ADRs em `docs/adr/` registram as decisões das atividades.
@@ -77,4 +73,4 @@ HTTP -> routes -> controller -> service -> database/prisma -> PostgreSQL
 npm test
 ```
 
-Os testes cobrem validação de autenticação sem banco, otimização de imagem e falhas do upload.
+A suíte inclui testes HTTP sem PostgreSQL para as rotas da Atividade 8, além de cobertura de autenticação, otimização de imagens e limites/formato dos uploads. Para validar migrações e persistência em PostgreSQL real, configure `.env`, execute `npx prisma migrate deploy` e teste com a base local.

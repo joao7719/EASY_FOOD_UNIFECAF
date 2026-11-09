@@ -12,13 +12,13 @@ async function list(req, res) {
 
 async function create(req, res) {
   const { name, category, rating } = req.body || {};
-  if (!name || !category) {
+  if (typeof name !== "string" || !name.trim() || typeof category !== "string" || !category.trim()) {
     return res.status(400).json({
       error: "Nome e categoria são obrigatórios"
     });
   }
 
-  if (rating !== undefined && (!Number.isFinite(Number(rating)) || Number(rating) < 0 || Number(rating) > 5)) {
+  if (rating !== undefined && rating !== "" && (!Number.isFinite(Number(rating)) || Number(rating) < 0 || Number(rating) > 5)) {
     return res.status(400).json({ error: "A avaliação deve estar entre 0 e 5" });
   }
 
@@ -26,10 +26,13 @@ async function create(req, res) {
     const restaurant = await restaurantService.createRestaurant({
       name,
       category,
-      rating
-    });
+      rating: rating === "" || rating === undefined ? undefined : Number(rating)
+    }, req.file?.buffer);
     return res.status(201).json(restaurant);
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error("Erro ao cadastrar restaurante:", error.message);
     return res.status(500).json({ error: "Erro interno do servidor" });
   }

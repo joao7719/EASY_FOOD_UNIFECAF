@@ -4,7 +4,7 @@
 Aceita para o contexto acadêmico.
 
 ## Contexto
-Os pratos precisam aceitar imagens, mas arquivos grandes prejudicam transferência e consumo de dados. O projeto tem baixo volume inicial e já possui um servidor Node.js.
+Usuários, restaurantes e pratos precisam aceitar imagens, mas arquivos grandes prejudicam transferência e consumo de dados. O projeto tem baixo volume inicial e já possui um servidor Node.js.
 
 ## Alternativas consideradas
 1. Processar dentro da API com Multer e Sharp.
@@ -12,16 +12,17 @@ Os pratos precisam aceitar imagens, mas arquivos grandes prejudicam transferênc
 3. Utilizar Serverless/FaaS com armazenamento externo e eventos.
 
 ## Decisão
-Manter o processamento dentro da API EasyFood. O Multer recebe JPEG, PNG ou WebP em memória, com limite de 5 MB. O Sharp corrige a orientação, limita a largura a 800 px, converte para WebP com qualidade 80 e salva em `uploads/dishes/`. O caminho é gravado em `Dish.imageUrl`.
+Manter o processamento dentro da API EasyFood e reutilizar `modules/shared/image.service.js` nos módulos de autenticação, restaurantes e pratos. O Multer recebe JPEG, PNG ou WebP em memória, com limite de 5 MB. O Sharp confere o conteúdo real, corrige orientação, limita a largura a 800 px, converte para WebP com qualidade 80 e salva em `uploads/profiles/`, `uploads/restaurants/` ou `uploads/dishes/`. O caminho público correspondente é persistido em `User.imageUrl`, `Restaurant.imageUrl` ou `Dish.imageUrl`.
 
 ## Justificativa
-A solução é simples, reutiliza a infraestrutura existente e atende ao baixo volume do contexto acadêmico. Não exige microsserviços, filas ou configuração adicional.
+Um serviço compartilhado evita duplicar validação, redimensionamento, conversão e limpeza de arquivos. Controllers continuam responsáveis por HTTP e services por regras de negócio e persistência. A solução mantém baixa a complexidade sem acoplar o processamento às rotas.
 
 ## Consequências
 ### Vantagens
-- Menor complexidade inicial.
-- Fácil implementação e teste.
-- Responsabilidade reutilizável em `modules/shared`.
+- Menor complexidade inicial e fácil implementação/teste.
+- Componente reutilizável em `modules/shared`.
+- Arquivos são organizados por finalidade e não são versionados.
+- Erros de processamento não deixam caminhos inconsistentes no banco.
 
 ### Limitações e trade-offs
 - O processamento consome CPU e memória da API.
