@@ -35,4 +35,4 @@ A migração `prisma/migrations/20261109000000_add_profile_and_restaurant_images
 
 O dashboard em `/` permite demonstrar os fluxos principais sem um cliente HTTP separado: criar um prato no restaurante escolhido, enviar uma imagem opcional durante o cadastro e enviar/trocar a imagem de um prato já listado. As operações de escrita exigem login.
 
-Execute `npm test`. Os testes HTTP usam stubs do Prisma e não substituem a verificação final com PostgreSQL real; para essa etapa, configure `DATABASE_URL`, aplique `npx prisma migrate deploy` e teste os endpoints com um usuário/restaurante existentes.
+Execute `npm test`. A suíte automatizada usa stubs do Prisma. Além dela, as migrations e o fluxo HTTP completo foram validados em um PostgreSQL temporário isolado, inclusive após reiniciar a API. Para repetir no seu ambiente de entrega, configure `DATABASE_URL`, aplique `npx prisma migrate deploy` e teste os endpoints com um usuário/restaurante do seu banco.

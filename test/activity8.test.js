@@ -122,6 +122,13 @@ test("Atividade 8: cadastra pratos associados e salva uploads autenticados", asy
     const meResponse = await fetch(`${baseUrl}/auth/me`, { headers });
     assert.equal((await meResponse.json()).user.imageUrl, profileData.user.imageUrl);
 
+    const unauthorizedRestaurant = await fetch(`${baseUrl}/restaurants`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Sem token", category: "Teste" })
+    });
+    assert.equal(unauthorizedRestaurant.status, 401);
+
     const restaurantForm = new FormData();
     restaurantForm.append("name", "Cantina Roma");
     restaurantForm.append("category", "Italiana");
@@ -136,6 +143,17 @@ test("Atividade 8: cadastra pratos associados e salva uploads autenticados", asy
     const restaurantData = await restaurantResponse.json();
     assert.match(restaurantData.imageUrl, /^\/uploads\/restaurants\/.+\.webp$/);
     storedUrls.push(restaurantData.imageUrl);
+
+    const jsonRestaurantResponse = await fetch(`${baseUrl}/restaurants`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Restaurante JSON", category: "Brasileira", rating: 4.2 })
+    });
+    assert.equal(jsonRestaurantResponse.status, 201);
+    assert.equal((await jsonRestaurantResponse.json()).name, "Restaurante JSON");
+    const publicRestaurants = await fetch(`${baseUrl}/restaurants`);
+    assert.equal(publicRestaurants.status, 200);
+    assert.ok((await publicRestaurants.json()).some((item) => item.name === "Restaurante JSON"));
 
     const dishResponse = await fetch(`${baseUrl}/restaurants/7/dishes`, {
       method: "POST",

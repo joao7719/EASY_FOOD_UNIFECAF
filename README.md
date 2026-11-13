@@ -75,4 +75,4 @@ HTTP -> routes -> controller -> service -> database/prisma -> PostgreSQL
 npm test
 ```
 
-A suíte inclui testes HTTP sem PostgreSQL para as rotas e a interface de demonstração da Atividade 8, além de cobertura de autenticação, otimização de imagens e limites/formato dos uploads. Para validar migrações e persistência em PostgreSQL real, configure `.env`, execute `npx prisma migrate deploy` e teste com a base local.
+A suíte inclui testes HTTP sem PostgreSQL para as rotas e a interface de demonstração da Atividade 8, além de cobertura de autenticação, e-mail, otimização de imagens e limites/formato dos uploads. O checklist de implementação e validação das oito atividades está em [`docs/validacao-atividades-1-a-8.md`](docs/validacao-atividades-1-a-8.md). Para reproduzir a validação no seu computador, configure `.env`, execute `npx prisma migrate deploy` e `npm run prisma:seed`.
