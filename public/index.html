@@ -23,6 +23,10 @@
           <span class="nav-icon">☰</span>
           <span>Restaurantes</span>
         </button>
+        <button class="nav-link tab-button" data-tab="dishes" type="button">
+          <span class="nav-icon">🍲</span>
+          <span>Cardápio</span>
+        </button>
       </nav>
 
       <div class="sidebar-card">
@@ -130,7 +134,44 @@
           </form>
         </section>
 
-        <section class="panel list-panel">
+        <section class="panel form-panel hidden-panel" id="dishes-panel">
+          <div class="panel-header">
+            <span class="panel-kicker">Novo prato</span>
+            <span class="panel-icon">+</span>
+          </div>
+
+          <form id="dish-form" class="restaurant-form">
+            <div class="input-group">
+              <label for="dish-restaurant">Restaurante</label>
+              <select id="dish-restaurant" name="restaurantId" required>
+                <option value="">Carregando restaurantes...</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label for="dish-name">Nome do prato</label>
+              <input type="text" id="dish-name" name="name" maxlength="150" placeholder="Ex: Lasanha da casa" required />
+            </div>
+            <div class="input-group">
+              <label for="dish-description">Descrição</label>
+              <textarea id="dish-description" name="description" placeholder="Ingredientes e detalhes do prato" required></textarea>
+            </div>
+            <div class="input-group">
+              <label for="dish-price">Preço (R$)</label>
+              <input type="number" id="dish-price" name="price" min="0.01" step="0.01" placeholder="32.50" required />
+            </div>
+            <div class="input-group">
+              <label for="dish-image">Imagem do prato (opcional)</label>
+              <input type="file" id="dish-image" name="image" accept="image/jpeg,image/png,image/webp" />
+            </div>
+            <button type="submit" class="submit-button">
+              <span class="button-icon">✚</span>
+              <span>Cadastrar prato</span>
+            </button>
+          </form>
+          <p class="form-hint">O cadastro exige login. Se enviar uma imagem, ela será otimizada em WebP.</p>
+        </section>
+
+        <section class="panel list-panel hidden-panel" id="restaurant-list-panel">
           <div class="panel-header list-header">
             <div>
               <span class="panel-kicker">Lista</span>
@@ -146,6 +187,21 @@
             <div class="empty-state">
               <span class="empty-icon">👤</span>
               <p>Sem usuários cadastrados.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel list-panel hidden-panel" id="dishes-list-panel">
+          <div class="panel-header list-header">
+            <div>
+              <span class="panel-kicker">Cardápio</span>
+              <h2>Pratos cadastrados</h2>
+            </div>
+          </div>
+          <div class="dish-list" id="dish-list" aria-live="polite">
+            <div class="empty-state">
+              <span class="empty-icon">🍲</span>
+              <p>Selecione um restaurante para consultar os pratos.</p>
             </div>
           </div>
         </section>

@@ -22,6 +22,8 @@ npm start
 
 A API fica em `http://localhost:3000`.
 
+O dashboard web fica em `http://localhost:3000/` e usa a mesma origem da API. Para demonstrar as funcionalidades, crie uma conta e faça login na aba **Usuários**; depois cadastre um restaurante na aba **Restaurantes** e abra **Cardápio** para criar um prato. O formulário aceita uma imagem opcional no cadastro e também permite enviar ou trocar a imagem de um prato já existente.
+
 ## Configuração
 
 `DATABASE_URL` e `JWT_SECRET` são obrigatórios para a aplicação. O e-mail usa a API HTTP do Resend quando `EMAIL_API_KEY` está configurada. Sem essa chave, o serviço funciona em modo simulado e não bloqueia o cadastro de restaurantes.
@@ -73,4 +75,4 @@ HTTP -> routes -> controller -> service -> database/prisma -> PostgreSQL
 npm test
 ```
 
-A suíte inclui testes HTTP sem PostgreSQL para as rotas da Atividade 8, além de cobertura de autenticação, otimização de imagens e limites/formato dos uploads. Para validar migrações e persistência em PostgreSQL real, configure `.env`, execute `npx prisma migrate deploy` e teste com a base local.
+A suíte inclui testes HTTP sem PostgreSQL para as rotas e a interface de demonstração da Atividade 8, além de cobertura de autenticação, otimização de imagens e limites/formato dos uploads. Para validar migrações e persistência em PostgreSQL real, configure `.env`, execute `npx prisma migrate deploy` e teste com a base local.

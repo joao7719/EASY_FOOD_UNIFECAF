@@ -115,6 +115,9 @@ test("Atividade 8: cadastra pratos associados e salva uploads autenticados", asy
     assert.equal(profileData.user.id, 41);
     assert.match(profileData.user.imageUrl, /^\/uploads\/profiles\/.+\.webp$/);
     storedUrls.push(profileData.user.imageUrl);
+    const publicProfileImage = await fetch(`${baseUrl}${profileData.user.imageUrl}`);
+    assert.equal(publicProfileImage.status, 200);
+    assert.match(publicProfileImage.headers.get("content-type"), /image\/webp/);
 
     const meResponse = await fetch(`${baseUrl}/auth/me`, { headers });
     assert.equal((await meResponse.json()).user.imageUrl, profileData.user.imageUrl);

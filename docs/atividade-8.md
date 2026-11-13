@@ -33,4 +33,6 @@ Se Sharp rejeitar o conteúdo, a resposta é `400`. Falha na gravação do banco
 
 A migração `prisma/migrations/20261109000000_add_profile_and_restaurant_images/migration.sql` adiciona colunas opcionais, preservando os dados existentes. Os testes cobrem associação do prato, upload no perfil autenticado, envio multipart no cadastro de restaurante, upload de prato, acesso público ao WebP, formato inválido e prato inexistente.
 
+O dashboard em `/` permite demonstrar os fluxos principais sem um cliente HTTP separado: criar um prato no restaurante escolhido, enviar uma imagem opcional durante o cadastro e enviar/trocar a imagem de um prato já listado. As operações de escrita exigem login.
+
 Execute `npm test`. Os testes HTTP usam stubs do Prisma e não substituem a verificação final com PostgreSQL real; para essa etapa, configure `DATABASE_URL`, aplique `npx prisma migrate deploy` e teste os endpoints com um usuário/restaurante existentes.
